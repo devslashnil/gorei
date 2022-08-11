@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -9,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // Update is a Tg object that the handler receives every time a user interacts with the bot.
@@ -90,7 +92,25 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
 }
 
+func LoadEnv(filename string) {
+	file, err := os.Open(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	sc := bufio.NewScanner(file)
+	for sc.Scan() {
+		keyAndVal := strings.Split(sc.Text(), "=")
+		os.Setenv(keyAndVal[0], keyAndVal[1])
+	}
+	if err := sc.Err(); err != nil {
+		log.Fatal(err)
+	}
+}
+
 func main() {
+	LoadEnv(".env")
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/echo", CreateWebHookHandler(func(s string) string {
 		return s
